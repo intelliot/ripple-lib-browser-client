@@ -6505,7 +6505,7 @@ class Connection extends events_1.EventEmitter {
         return this._ws !== null;
     }
     isConnected() {
-        return this._ws && this._ws.connected && this._isReady;
+        return this._ws ? this._ws.connected && this._isReady : false;
     }
     _onUnexpectedClose(beforeOpen, resolve, reject, code) {
         if (this._onOpenErrorBound) {
@@ -6640,13 +6640,14 @@ class Connection extends events_1.EventEmitter {
             options.headers = { Authorization: `Basic ${base64}` };
         }
         const optionsOverrides = _.omitBy({
+            url: this._url,
             ca: this._trustedCertificates,
             key: this._key,
             passphrase: this._passphrase,
             cert: this._certificate
         }, _.isUndefined);
         const websocketOptions = _.assign({}, options, optionsOverrides);
-        const websocket = new WebSocket(this._url, null, websocketOptions);
+        const websocket = new WebSocket(websocketOptions);
         // we will have a listener for each outstanding request,
         // so we have to raise the limit (the default is 10)
         if (typeof websocket.setMaxListeners === 'function') {
@@ -6752,15 +6753,13 @@ class Connection extends events_1.EventEmitter {
         if (this._trace) {
             this._console.log(message);
         }
-        return new Promise((resolve, reject) => {
-            if (this._ws.connected && !this._ws.destroyed) {
-                this._ws.send(message);
-                resolve();
-            }
-            else {
-                reject(new errors_1.DisconnectedError());
-            }
-        });
+        if (this._ws.connected && !this._ws.destroyed) {
+            this._ws.send(message);
+            return Promise.resolve();
+        }
+        else {
+            return Promise.reject(new errors_1.DisconnectedError());
+        }
     }
     request(request, timeout) {
         return new Promise((resolve, reject) => {
@@ -6806,7 +6805,7 @@ class Connection extends events_1.EventEmitter {
             this._ws.once('close', onDisconnect);
             // JSON.stringify automatically removes keys with value of 'undefined'
             const message = JSON.stringify(Object.assign({}, request, { id }));
-            this._whenReady(this._send(message)).then(() => {
+            this._whenReady(this._send(message).catch(_reject)).then(() => {
                 const delay = timeout || this._timeout;
                 timer = setTimeout(() => _reject(new errors_1.TimeoutError()), delay);
             }).catch(_reject);
