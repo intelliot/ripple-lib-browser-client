@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "A simple client to try ripple-lib in the browser",
   "scripts": {
-    "prepublish": "git clone https://github.com/mikeb1rd/ripple-lib.git ./node_modules/ripple-lib && cd ./node_modules/ripple-lib && npm install && cd ../../ && node ./node_modules/browserify/bin/cmd.js main.js > bundle.js",
+    "prepublish": "git clone https://github.com/ripple/ripple-lib.git ./node_modules/ripple-lib && cd ./node_modules/ripple-lib && git checkout browser-in-package-json && npm install && cd ../../ && node ./node_modules/browserify/bin/cmd.js main.js > bundle.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
